@@ -73,7 +73,20 @@ def update_volume(val):
     volume = float(val) / 100
     canvas.itemconfig(volume_value_label, text=f"{int(float(val))}")
 
-# Set up the GUI
+# Function to create the gradient image
+def create_gradient(width, height, color1, color2):
+    base = Image.new('RGB', (width, height), color1)
+    top = Image.new('RGB', (width, height), color2)
+    mask = Image.new('L', (width, height))
+    mask_data = []
+    for y in range(height):
+        for x in range(width):
+            mask_data.append(int(255 * (x / width * 0.5 + y / height * 0.5)))
+    mask.putdata(mask_data)
+    base.paste(top, (0, 0), mask)
+    return ImageTk.PhotoImage(base)
+
+# Function to set up the GUI
 def setup_gui():
     global root, canvas, volume_value_label, gradient_image
     root = ThemedTk(theme='breeze')
@@ -89,18 +102,6 @@ def setup_gui():
 
     canvas = tk.Canvas(root, width=400, height=200, highlightthickness=0)
     canvas.pack(fill="both", expand=True)
-
-    def create_gradient(width, height, color1, color2):
-        base = Image.new('RGB', (width, height), color1)
-        top = Image.new('RGB', (width, height), color2)
-        mask = Image.new('L', (width, height))
-        mask_data = []
-        for y in range(height):
-            for x in range(width):
-                mask_data.append(int(255 * (x / width * 0.5 + y / height * 0.5)))
-        mask.putdata(mask_data)
-        base.paste(top, (0, 0), mask)
-        return ImageTk.PhotoImage(base)
 
     gradient_image = create_gradient(400, 200, '#B330E1', '#5C73B9')
     canvas.create_image(0, 0, anchor=tk.NW, image=gradient_image)
@@ -166,12 +167,14 @@ icon = pystray.Icon("keyboard_sounds", icon_image, "Keyboard Sound Player", menu
 def run_tray():
     icon.run()
 
-setup_gui()
-root.withdraw()
-
+# Start the tray icon in a separate thread
 tray_thread = threading.Thread(target=run_tray)
 tray_thread.daemon = True
 tray_thread.start()
+
+# Initialize the GUI after starting the tray icon
+setup_gui()
+root.withdraw()
 
 print("Keyboard sound script is running. Adjust settings from the tray icon.")
 root.mainloop()
